@@ -118,3 +118,4 @@ def update_location_by_uuid(location_id, event):
             'statusCode': 500,
             'body': json.dumps({'message': 'Internal server error', 'error': str(e)})
         }
+    
