@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>POC Leaflet App</title>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+            display: none;
+        }
+
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: none;
+            z-index: 1000;
+            /* Ensure it's on top */
+        }
+
+        .api-key-panel {
+            text-align: center;
+            margin: 20px;
+            padding: 20px;
+        }
+
+        button {
+            margin: 4px 0;
+            cursor: pointer;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</head>
+
+<body>
+    <div class="api-key-panel" id="apiKeyPanel">
+        <h2>Enter API Key</h2>
+        <input type="text" id="apiKey" placeholder="Enter your API key">
+        <button onclick="submitApiKey()">Submit</button>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <button onclick="fetchLocations()">Refresh Points</button><br>
+        <button onclick="createLocation()">Add Point</button><br>
+        <span id="marker-info"></span><br>
+        <button id="processBtn" style="display:none;" onclick="processLocation()">Process</button><br>
+        <button id="refreshBtn" style="display:none;" onclick="refreshLocation()">Refresh State</button><br>
+        <button id="deleteBtn" style="display:none;" onclick="deleteLocation()">Delete</button>
+    </div>
+    <div id="map"></div>
+    <script>
+        let map;
+        let apiKey = '';
+        let currentMarkerId = null;
+        let markers = {};
+
+        function submitApiKey() {
+            apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                alert('Please enter an API key');
+                return;
+            }
+
+            // Hide API key panel and show map
+            document.getElementById('apiKeyPanel').style.display = 'none';
+            document.getElementById('map').style.display = 'block';
+            document.getElementById('infoPanel').style.display = 'block';
+
+            // Initialize map
+            initMap();
+            fetchLocations();
+        }
+
+        function initMap() {
+            map = L.map('map').setView([0, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        }
+
+        function fetchLocations() {
+            fetch("https://7m54iap2r0.execute-api.eu-central-1.amazonaws.com/dev/locations", {
+                headers: {
+                    'x-api-key': apiKey
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    clearMarkers();
+                    data.locations.forEach(loc => {
+                        if (loc.coordinates) {
+                            let lat = loc.coordinates.lat;
+                            let lon = loc.coordinates.lon;
+                            let marker = L.marker([lat, lon])
+                                .addTo(map)
+                                .on('click', () => onMarkerClick(loc.LocationID));
+                            marker.bindPopup(`UUID: ${loc.LocationID}`).openPopup();
+                            markers[loc.LocationID] = marker;
+                        }
+                    });
+                })
+                .catch(err => alert('Error fetching locations: ' + err.message));
+        }
+
+        function createLocation() {
+            let body = {
+                name: "New Location",
+                coordinates: { lat: 0, lon: 0 },
+                description: "POC location"
+            };
+            fetch("https://7m54iap2r0.execute-api.eu-central-1.amazonaws.com/dev/locations", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    'x-api-key': apiKey
+                },
+                body: JSON.stringify(body)
+            })
+                .then(() => fetchLocations())
+                .catch(err => alert('Error creating location: ' + err.message));
+        }
+
+        function onMarkerClick(id) {
+            currentMarkerId = id;
+            document.getElementById('marker-info').textContent = "Selected: " + id;
+            document.getElementById('processBtn').style.display = "inline-block";
+            document.getElementById('refreshBtn').style.display = "inline-block";
+            document.getElementById('deleteBtn').style.display = "inline-block";
+        }
+
+        function processLocation() {
+            if (!currentMarkerId) return;
+            fetch(`https://7m54iap2r0.execute-api.eu-central-1.amazonaws.com/dev/locations/${currentMarkerId}/process`, {
+                method: "POST",
+                headers: {
+                    'x-api-key': apiKey
+                }
+            })
+                .then(() => alert("Processing started for " + currentMarkerId))
+                .catch(err => alert('Error processing location: ' + err.message));
+        }
+
+        function refreshLocation() {
+            if (!currentMarkerId) return;
+            fetch(`https://7m54iap2r0.execute-api.eu-central-1.amazonaws.com/dev/locations/${currentMarkerId}`, {
+                headers: {
+                    'x-api-key': apiKey
+                }
+            })
+                .then(res => res.json())
+                .then(loc => {
+                    alert("Location state: " + (loc.status || "No status"));
+                })
+                .catch(err => alert('Error refreshing location: ' + err.message));
+        }
+
+        function deleteLocation() {
+            if (!currentMarkerId) return;
+            console.log('Deleting location: ' + currentMarkerId);
+            fetch(`https://7m54iap2r0.execute-api.eu-central-1.amazonaws.com/dev/locations/${currentMarkerId}`, {
+                method: "DELETE",
+                headers: {
+                    'x-api-key': apiKey
+                }
+            })
+                .then(() => {
+                    alert("Location deleted: " + currentMarkerId);
+                    fetchLocations();
+                })
+                .catch(err => alert('Error deleting location: ' + err.message));
+        }
+
+        function clearMarkers() {
+            Object.values(markers).forEach(m => map.removeLayer(m));
+            markers = {};
+        }
+    </script>
+</body>
+
+</html>

@@ -55,6 +55,7 @@ def create_location(event):
                 "lon": Decimal(str(data['coordinates']['lon']))
             },
             "description": data['description'],
+            "status": "POINT_CREATED"
         }
         
         # Insert the item into DynamoDB
