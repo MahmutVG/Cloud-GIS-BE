@@ -34,7 +34,3 @@ This project provides a set of tools for processing Sentinel-2 satellite images 
 ## Usage
 
 To deploy the Lambda function, package the contents of the `src` directory and upload it to AWS Lambda. Ensure that the Lambda function has the necessary permissions to access S3 and any other AWS services you intend to use.
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for more details.
