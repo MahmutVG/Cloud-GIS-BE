@@ -52,7 +52,6 @@
 
     <div class="info-panel" id="infoPanel">
         <button onclick="fetchLocations()">Refresh Points</button><br>
-        <button onclick="createLocation()">Add Point</button><br>
         <span id="marker-info"></span><br>
         <button id="processBtn" style="display:none;" onclick="processLocation()">Process</button><br>
         <button id="refreshBtn" style="display:none;" onclick="refreshLocation()">Refresh State</button><br>
@@ -85,6 +84,11 @@
         function initMap() {
             map = L.map('map').setView([0, 0], 2);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // Add click event listener to the map
+            map.on('click', function (e) {
+                createLocation(e.latlng);
+            });
         }
 
         function fetchLocations() {
@@ -111,10 +115,10 @@
                 .catch(err => alert('Error fetching locations: ' + err.message));
         }
 
-        function createLocation() {
+        function createLocation(latlng) {
             let body = {
                 name: "New Location",
-                coordinates: { lat: 0, lon: 0 },
+                coordinates: { lat: latlng.lat, lon: latlng.lng },
                 description: "POC location"
             };
             fetch("https://7m54iap2r0.execute-api.eu-central-1.amazonaws.com/dev/locations", {
