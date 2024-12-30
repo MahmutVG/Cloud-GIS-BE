@@ -4,7 +4,7 @@ This project provides a set of tools for processing Sentinel-2 satellite images 
 
 ## Project Structure
 
-- `src/sentinel_data.py`: Contains the main logic for processing Sentinel-2 satellite images. It includes functions for calculating NDMI and MSAVI2 indices, processing images using KMeans clustering, downloading images from a specified API, and handling AWS Lambda events.
+- `src/sentinel_data.py`: Contains the main logic for processing Sentinel-2 satellite images. It includes functions for calculating NDMI and MSAVI2 indices.
   
 - `requirements.txt`: Lists the Python dependencies required for the project, including libraries such as `boto3`, `numpy`, `gdal`, `requests`, and `sklearn`.
 
